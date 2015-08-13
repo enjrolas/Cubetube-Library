@@ -94,7 +94,7 @@ class Cube
     void show(void);
     void listen(void);
     void initButtons(void);
-    void onlineOfflineSwitch(void);
+    void checkCloudButton(void);
     void joinWifi(void);
     void updateNetworkInfo(void);
 };

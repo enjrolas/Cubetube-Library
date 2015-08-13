@@ -36,6 +36,7 @@ Cube::Cube() : \
 
 /** Initialization of cube resources and environment. */
 void Cube::begin(void) {
+  Serial.begin(115200);
   strip.begin();
   //initialize Spark variables
   center=Point((size-1)/2,(size-1)/2,(size-1)/2);  
@@ -376,8 +377,7 @@ Color Cube::lerpColor(Color a, Color b, int val, int minVal, int maxVal)
 void Cube::show()
 {
   strip.show();
-  if(onlinePressed)
-    Spark.process();
+  checkCloudButton();
 }
 
 /** Initialize online/offline switch and the join wifi button */
@@ -393,40 +393,39 @@ void Cube::initButtons() {
   //a.k.a. onlinePressed is HIGH when the switch is set to 'online' and LOW when the switch is set to 'offline'
   this->onlinePressed = !digitalRead(INTERNET_BUTTON);
 
-  if(onlinePressed)
+  if(this->onlinePressed)
     Spark.connect();
-
-  void (Cube::*check)(void) = &Cube::onlineOfflineSwitch;
-  attachInterrupt(INTERNET_BUTTON, (void (*)())check, CHANGE);
-
-  void (Cube::*wifi)(void) = &Cube::joinWifi;
-  attachInterrupt(MODE, (void (*)())wifi, FALLING);
-
-  
 
 }
 
-/** react to a change of the online/offline switch */
-void Cube::onlineOfflineSwitch() {
-  // if the 'connect to cloud' button is pressed, try to connect to wifi.  
-  // otherwise, run the program
 
-  // onlinePressed is HIGH when the switch is _not_ connected and LOW when the switch is connected
-  // a.k.a. onlinePressed is HIGH when the switch is set to 'online' and LOW when the switch is set to 'offline'
-  this->onlinePressed = !digitalRead(INTERNET_BUTTON);
+//checks to see if the 'online/offline' switch is switched
+void Cube::checkCloudButton()
+{
+  //if the 'connect to cloud' button is pressed, try to connect to wifi.  
+  //otherwise, run the program
+  //note -- how does this behave when there are no wifi credentials loaded on the spark?
 
-  if((!this->onlinePressed) && (this->lastOnline)) {
-    //marked as 'online'
-    this->lastOnline = this->onlinePressed;
-    Spark.connect();
-  } else if((this->onlinePressed) && (!this->lastOnline)) {
-    // marked as 'offline'
-    this->lastOnline = this->onlinePressed;
-    Spark.disconnect();
-  }
+  //onlinePressed is HIGH when the switch is _not_ connected and LOW when the switch is connected
+  //a.k.a. onlinePressed is HIGH when the switch is set to 'online' and LOW when the switch is set to 'offline'
+  onlinePressed=!digitalRead(INTERNET_BUTTON);
 
-  this->lastOnline = this->onlinePressed;
+  if((onlinePressed)&&(!lastOnline))  //marked as 'online'
+    {
+      lastOnline=onlinePressed;
+      Spark.connect();
+    }    
 
+  else if((!onlinePressed)&&(lastOnline))  //marked as 'offline'
+    {
+      lastOnline=onlinePressed;
+      Spark.disconnect();
+    }
+
+  lastOnline=onlinePressed;
+    
+  if(!digitalRead(MODE))
+    WiFi.listen();
 }
 
 void Cube::joinWifi()
