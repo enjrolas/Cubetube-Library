@@ -40,12 +40,11 @@ void Cube::begin(void) {
   strip.begin();
   //initialize Spark variables
   center=Point((size-1)/2,(size-1)/2,(size-1)/2);  
-  Spark.variable("IPAddress", this->localIP, STRING);
+  Particle.variable("IPAddress", this->localIP, STRING);
   
   this->initButtons();
   this->udp.begin(STREAMING_PORT);
   this->updateNetworkInfo();
-  Spark.connect();
 }
 
 /** Set a voxel at a position to a color.
@@ -377,12 +376,13 @@ Color Cube::lerpColor(Color a, Color b, int val, int minVal, int maxVal)
 void Cube::show()
 {
   strip.show();
-  checkCloudButton();
+    checkCloudButton();
 }
 
 /** Initialize online/offline switch and the join wifi button */
 void Cube::initButtons() {
 
+  WiFi.off();
   //set the input mode for the 'connect to cloud' button
   pinMode(INTERNET_BUTTON, INPUT_PULLUP);
   pinMode(MODE, INPUT_PULLUP);
@@ -394,7 +394,10 @@ void Cube::initButtons() {
   this->onlinePressed = !digitalRead(INTERNET_BUTTON);
 
   if(this->onlinePressed)
-    Spark.connect();
+    {
+      WiFi.on();
+      Particle.connect();
+    }
 
 }
 
@@ -413,13 +416,15 @@ void Cube::checkCloudButton()
   if((onlinePressed)&&(!lastOnline))  //marked as 'online'
     {
       lastOnline=onlinePressed;
-      Spark.connect();
+      WiFi.on();
+      Particle.connect();
     }    
 
   else if((!onlinePressed)&&(lastOnline))  //marked as 'offline'
     {
       lastOnline=onlinePressed;
-      Spark.disconnect();
+      //Particle.disconnect();
+      WiFi.off();
     }
 
   lastOnline=onlinePressed;
